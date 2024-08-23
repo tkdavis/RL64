@@ -3016,13 +3016,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   accelerationForce: 1000
   turnForce: 700
+  initMaxSpeed: 10
   maxSpeed: 10
+  boostedMaxSpeed: 20
   airControlFactor: 300
   jumpForce: 4
   flipTorque: 120
   jumpCount: 1
   stabilizationForce: 4
   rollThreshold: 90
+  boostForce: 500
   frictionCurve:
     serializedVersion: 2
     m_Curve:

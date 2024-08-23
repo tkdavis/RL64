@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -6,13 +7,17 @@ public class PlayerController : MonoBehaviour
 {
     public float accelerationForce = 2000f;
     public float turnForce = 1500f;
+    public float initMaxSpeed = 30.0f;
     public float maxSpeed = 30f;
+    public float boostedMaxSpeed = 35.0f;
     public float airControlFactor = 0.5f;
     public float jumpForce = 500f;
     public float flipTorque = 5000f; // Torque for flipping
     public float jumpCount = 1;
     public float stabilizationForce = 10f; // Adjust the force applied to stabilize the car
     public float rollThreshold = 45f;       // Angle threshold to start stabilization
+    public float boostForce = 500.0f;
+
 
     [SerializeField]
     private AnimationCurve frictionCurve;
@@ -26,6 +31,7 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded;
     private bool isGroundedUpsideDown;
     private bool hasFlipped;
+    private bool boostPressed;
     private float vertInput;
     private float moveInput;
     private float reverseInput;
@@ -58,6 +64,7 @@ public class PlayerController : MonoBehaviour
         vertInput = Input.GetAxis("Vertical");
         turnInput = Input.GetAxis("Horizontal"); // Left/Right
         jumpRequested = Input.GetButtonDown("Fire1");
+        boostPressed = Input.GetButton("Fire2");
 
         if (jumpRequested && jumpCount > 0) isJumping = true;
 
@@ -115,6 +122,15 @@ public class PlayerController : MonoBehaviour
             // Side Friction
             rb.AddForce(CalculateFriction() * transform.right * Mathf.Sign(-xVel) * rb.velocity.magnitude);
 
+            // Set Boost / Max Speed adjustments
+            if (boostPressed && rb.velocity.magnitude > initMaxSpeed && maxSpeed == initMaxSpeed)
+            {
+                maxSpeed = boostedMaxSpeed;
+            } else if (!boostPressed && maxSpeed == boostedMaxSpeed && rb.velocity.magnitude < initMaxSpeed)
+            {
+                maxSpeed = initMaxSpeed;
+            }
+
             // Limit speed
             if (rb.velocity.magnitude > maxSpeed)
             {
@@ -128,6 +144,11 @@ public class PlayerController : MonoBehaviour
 
             // Handle flipping in the air
             //HandleFlip();
+        }
+
+        if (boostPressed)
+        {
+            rb.AddForce(transform.forward * boostForce * Time.fixedDeltaTime, ForceMode.Acceleration);
         }
 
         if (isJumping && flipDirectionPressed() && jumpCount > 0)
