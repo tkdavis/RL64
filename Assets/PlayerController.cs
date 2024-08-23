@@ -162,15 +162,15 @@ public class PlayerController : MonoBehaviour
                 }
                 else if (turnInput > 0.1f) // Turning right
                 {
-                    rb.AddTorque(-transform.forward * (flipTorque / 2.0f) * Time.fixedDeltaTime, ForceMode.Impulse);
-                    rb.AddForce(transform.right * 4.0f, ForceMode.Impulse);
-                    StartCoroutine(CounterFlipTorque("sideflipLeft"));
+                    rb.AddTorque(-transform.forward * (flipTorque/1.2f) * Time.fixedDeltaTime, ForceMode.Impulse);
+                    rb.AddForce(transform.up + (transform.right * 4.0f), ForceMode.Impulse);
+                    StartCoroutine(CounterFlipTorque("sideflipLeft", 0.75f));
                 }
                 else if (turnInput < -0.1f) // Turning left
                 {
-                    rb.AddTorque(transform.forward * (flipTorque / 2.0f) * Time.fixedDeltaTime, ForceMode.Impulse);
-                    rb.AddForce(-transform.right * 4.0f, ForceMode.Impulse);
-                    StartCoroutine(CounterFlipTorque("sideflipRight"));
+                    rb.AddTorque(transform.forward * (flipTorque/1.2f) * Time.fixedDeltaTime, ForceMode.Impulse);
+                    rb.AddForce(transform.up + (-transform.right * 4.0f), ForceMode.Impulse);
+                    StartCoroutine(CounterFlipTorque("sideflipRight", 0.75f));
                 }
 
                 hasFlipped = true; // Prevent further flips until grounded
@@ -260,10 +260,10 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    IEnumerator CounterFlipTorque(string flipType)
+    IEnumerator CounterFlipTorque(string flipType, float secondsDelay = 1.0f)
     {
         // Wait for 1 second
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(secondsDelay);
 
         // Apply counter-torque to counteract the previous force
         if (flipType == "backflip")
@@ -274,10 +274,10 @@ public class PlayerController : MonoBehaviour
             rb.AddTorque(transform.right * flipTorque * Time.fixedDeltaTime, ForceMode.Impulse);
         } else if (flipType == "sideflipRight")
         {
-            rb.AddTorque(-transform.forward * (flipTorque / 2.0f) * Time.fixedDeltaTime, ForceMode.Impulse);
+            rb.AddTorque(-transform.forward * (flipTorque / 1.2f) * Time.fixedDeltaTime, ForceMode.Impulse);
         } else if (flipType == "sideflipLeft")
         {
-            rb.AddTorque(transform.forward * (flipTorque / 2.0f) * Time.fixedDeltaTime, ForceMode.Impulse);
+            rb.AddTorque(transform.forward * (flipTorque / 1.2f) * Time.fixedDeltaTime, ForceMode.Impulse);
         }
     }
 
