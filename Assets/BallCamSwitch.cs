@@ -12,7 +12,7 @@ public class BallCamSwitch : MonoBehaviour
 
     private bool focusedOnBall = false;
     private Transform newTarget;
-    private float distanceFromFollow = 4.0f;
+    private float distanceFromFollow = 3.0f;
     private CinemachineTransposer transposer;
 
     private void Start()
@@ -30,7 +30,7 @@ public class BallCamSwitch : MonoBehaviour
                 newTarget = playerTransform;
                 focusedOnBall = false;
                 transposer.m_BindingMode = CinemachineTransposer.BindingMode.LockToTargetWithWorldUp;
-                transposer.m_FollowOffset = new Vector3(0.0f, 0.75f, -4.0f);
+                transposer.m_FollowOffset = new Vector3(0.0f, 0.75f, -3.0f);
                 SetLookAtTarget();
             } else {
                 newTarget = ballTransform;

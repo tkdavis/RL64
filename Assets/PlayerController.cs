@@ -1,5 +1,5 @@
+using System;
 using System.Collections;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -11,12 +11,14 @@ public class PlayerController : MonoBehaviour
     public float maxSpeed = 30f;
     public float boostedMaxSpeed = 35.0f;
     public float airControlFactor = 0.5f;
+    public float maxRollTorqueSpeed = 2.0f;
     public float jumpForce = 500f;
     public float flipTorque = 5000f; // Torque for flipping
     public float jumpCount = 1;
     public float stabilizationForce = 10f; // Adjust the force applied to stabilize the car
     public float rollThreshold = 45f;       // Angle threshold to start stabilization
     public float boostForce = 500.0f;
+    public ParticleSystem boostParticles;
 
 
     [SerializeField]
@@ -32,10 +34,13 @@ public class PlayerController : MonoBehaviour
     private bool isGroundedUpsideDown;
     private bool hasFlipped;
     private bool boostPressed;
+    private bool isBoosting;
     private float vertInput;
     private float moveInput;
     private float reverseInput;
     private float turnInput;
+    private bool rollLeftInput;
+    private bool rollRightInput;
     private bool jumpRequested;
     private bool isJumping;
     private float flipCooldown = 0.5f;
@@ -65,6 +70,8 @@ public class PlayerController : MonoBehaviour
         turnInput = Input.GetAxis("Horizontal"); // Left/Right
         jumpRequested = Input.GetButtonDown("Fire1");
         boostPressed = Input.GetButton("Fire2");
+        rollLeftInput = Input.GetButton("BumperLeft");
+        rollRightInput = Input.GetButton("BumperRight");
 
         if (jumpRequested && jumpCount > 0) isJumping = true;
 
@@ -72,6 +79,7 @@ public class PlayerController : MonoBehaviour
         HandleAirControl();
         UpdateFlipTimer();
         AdjustAudioToVelocity();
+        HandleBoostParticles();
     }
 
     void FixedUpdate()
@@ -112,11 +120,11 @@ public class PlayerController : MonoBehaviour
             // Turning
             if (rb.velocity.magnitude > 0.1f && transform.InverseTransformDirection(rb.velocity).z > 0)
             {
-                rb.AddTorque(transform.up * turnInput * CalculateTurnForce()/*turnForce*/ * Time.fixedDeltaTime, ForceMode.Acceleration);
+                rb.AddTorque(transform.up * turnInput * CalculateTurnForce() * Time.fixedDeltaTime, ForceMode.Acceleration);
             } else if (rb.velocity.magnitude > 0.1f && transform.InverseTransformDirection(rb.velocity).z < 0)
             {
                 // Reverse turn input if going in reverse
-                rb.AddTorque(transform.up * -turnInput * CalculateTurnForce()/*turnForce*/ * Time.fixedDeltaTime, ForceMode.Acceleration);
+                rb.AddTorque(transform.up * -turnInput * CalculateTurnForce() * Time.fixedDeltaTime, ForceMode.Acceleration);
             }
 
             // Side Friction
@@ -141,17 +149,33 @@ public class PlayerController : MonoBehaviour
         {
             // Air control
             rb.AddTorque(transform.right * vertInput * airControlFactor * Time.fixedDeltaTime, ForceMode.Acceleration);
+            rb.AddTorque(transform.up * turnInput * airControlFactor * Time.fixedDeltaTime, ForceMode.Acceleration);
 
+            // Calculate roll direction
+            int rollDirection = Convert.ToInt32(rollLeftInput) - Convert.ToInt32(rollRightInput);
+
+            // Current roll speed (angular velocity around the roll axis)
+            float currentRollSpeed = rb.angularVelocity.magnitude;
+            Debug.Log(currentRollSpeed);
+
+            // Calculate the torque to apply
+            float speedDifference = maxRollTorqueSpeed - Mathf.Abs(currentRollSpeed);
+            float finalTorque = speedDifference * rollDirection * airControlFactor;
+
+            rb.AddTorque(transform.forward * Mathf.Clamp(finalTorque * 2, -maxRollTorqueSpeed, maxRollTorqueSpeed));
             // Handle flipping in the air
             //HandleFlip();
         }
 
         if (boostPressed)
         {
+            isBoosting = true;
             rb.AddForce(transform.forward * boostForce * Time.fixedDeltaTime, ForceMode.Acceleration);
+        } else {
+            isBoosting = false;
         }
 
-        if (isJumping && flipDirectionPressed() && jumpCount > 0)
+        if (isJumping && flipDirectionPressed() && jumpCount > 0 && !isGrounded)
         {
             HandleFlip();
         } else if (isJumping && jumpCount > 0)
@@ -166,7 +190,7 @@ public class PlayerController : MonoBehaviour
     {
         if (isJumping)
         {
-            if (canFlip && !hasFlipped && jumpCount > 0)
+            if (canFlip && !hasFlipped && jumpCount > 0 && !isGrounded)
             {
                 // Perform flip based on input
                 if (vertInput > 0) // Moving forward
@@ -244,6 +268,7 @@ public class PlayerController : MonoBehaviour
 
         // Apply torque to pitch the car
         rb.AddTorque(transform.right * pitchTorque, ForceMode.Acceleration);
+        Debug.DrawRay(transform.position, transform.right * 5f, Color.red);
     }
 
     private float CalculateFriction()
@@ -360,6 +385,17 @@ public class PlayerController : MonoBehaviour
         if (!assignedIdleClip)
         {
             engineSfx.pitch = Mathf.Max(Mathf.Min(1f, rb.velocity.magnitude / maxSpeed), 0.1f);
+        }
+    }
+
+    void HandleBoostParticles()
+    {
+        if (isBoosting && !boostParticles.isEmitting)
+        {
+            boostParticles.Play();
+        } else if (!isBoosting && boostParticles.isPlaying)
+        {
+            boostParticles.Stop();
         }
     }
 }
