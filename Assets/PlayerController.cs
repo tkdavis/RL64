@@ -91,7 +91,8 @@ public class PlayerController : MonoBehaviour
         // Check if the car is significantly tilted (rolled)
         if (IsCarRolled())
         {
-            StabilizeCar();
+            // TODO
+            //StabilizeCar();
         }
     }
 
